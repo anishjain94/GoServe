@@ -7,8 +7,6 @@ import (
 )
 
 func main() {
-	fmt.Println("Logs from your program will appear here!")
-
 	l, err := net.Listen("tcp", "0.0.0.0:4221")
 	if err != nil {
 		fmt.Println("Failed to bind to port 4221")
@@ -21,6 +19,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	data := []byte{}
+	conn.Read(data)
+
+	fmt.Println(string(data))
 	conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
 
 }
