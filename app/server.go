@@ -60,9 +60,8 @@ func server(conn net.Conn) {
 
 		response := "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + fmt.Sprint(len(header)) + "\r\n\r\n" + header
 		conn.Write([]byte(response))
-	} else if strings.Contains(fields[1], "/files") {
+	} else if fields[0] == "GET" && strings.Contains(fields[1], "/files") {
 
-		fmt.Println(fields[1])
 		extractedFileName := strings.TrimPrefix(fields[1], "/files/")
 		// fmt.Println(fileNameIndex)
 		// extractedFileName := string(fields[1][fileNameIndex:])
@@ -78,6 +77,34 @@ func server(conn net.Conn) {
 			response := "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: " + fmt.Sprint(len(file)) + "\r\n\r\n" + string(file)
 			conn.Write([]byte(response))
 		}
+
+	} else if fields[0] == "POST" && strings.Contains(fields[1], "/files") {
+
+		extractedFileName := strings.TrimPrefix(fields[1], "/files/")
+
+		index := 0
+		for i, field := range fields {
+			if strings.Contains(field, "Accept-Encoding") {
+				index = i
+				break
+			}
+		}
+		fmt.Println(fields[index])
+
+		fileContent := strings.Join(fields[index+2:], " ")
+
+		fmt.Println(fileContent)
+
+		file, err := os.Create(directory + extractedFileName)
+		defer file.Close()
+
+		if err != nil {
+			panic(err)
+		}
+
+		file.Write([]byte(fileContent))
+
+		conn.Write([]byte("HTTP/1.1 201 File Created\r\nContent-Length: 0\r\n\r\n"))
 
 	} else {
 		conn.Write([]byte("HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n"))
