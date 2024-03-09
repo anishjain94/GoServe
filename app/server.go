@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -19,10 +20,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	data := []byte{}
-	conn.Read(data)
+	buffer := make([]byte, 1024)
+	charRead, _ := conn.Read(buffer)
 
-	fmt.Println(string(data))
-	conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	fields := strings.Fields(string(buffer[:charRead]))
+	fmt.Println(fields)
+
+	if len(fields[1]) == 1 {
+		conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	} else {
+		conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+
+	}
 
 }
