@@ -24,13 +24,23 @@ func main() {
 	charRead, _ := conn.Read(buffer)
 
 	fields := strings.Fields(string(buffer[:charRead]))
-	fmt.Println(fields)
+	fmt.Println(fields[1])
 
-	if len(fields[1]) == 1 {
+	if fields[1] == "/" {
 		conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	} else if strings.Contains(fields[1], "/echo") {
+		path := fields[1]
+		firstIndex := strings.Index(path, "/")
+		secIndex := strings.Index(path[firstIndex+1:], "/")
+
+		urlPath := path[secIndex+2:]
+
+		response := "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + fmt.Sprint(len(urlPath)) + "\r\n\r\n" + urlPath
+
+		fmt.Println(response)
+		conn.Write([]byte(response))
 	} else {
 		conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
-
 	}
 
 }
