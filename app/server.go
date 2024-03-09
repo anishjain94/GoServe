@@ -1,13 +1,20 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net"
 	"os"
 	"strings"
 )
 
+var directory string
+
 func main() {
+
+	flag.StringVar(&directory, "directory", "", "directory path")
+	flag.Parse()
+
 	l, err := net.Listen("tcp", "0.0.0.0:4221")
 	if err != nil {
 		fmt.Println("Failed to bind to port 4221")
@@ -15,7 +22,6 @@ func main() {
 	}
 
 	for {
-
 		conn, err := l.Accept()
 		if err != nil {
 			fmt.Println("Error accepting connection: ", err.Error())
@@ -34,7 +40,6 @@ func server(conn net.Conn) {
 	fields := strings.Fields(string(buffer[:charRead]))
 
 	fmt.Println(string(buffer[:charRead]))
-	fmt.Println()
 	fmt.Println(fields)
 
 	if fields[1] == "/" {
@@ -55,8 +60,27 @@ func server(conn net.Conn) {
 
 		response := "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + fmt.Sprint(len(header)) + "\r\n\r\n" + header
 		conn.Write([]byte(response))
+	} else if strings.Contains(fields[1], "/files") {
+
+		fmt.Println(fields[1])
+		extractedFileName := strings.TrimPrefix(fields[1], "/files/")
+		// fmt.Println(fileNameIndex)
+		// extractedFileName := string(fields[1][fileNameIndex:])
+
+		fmt.Println(directory, extractedFileName)
+
+		file, err := os.ReadFile(directory + extractedFileName)
+
+		if err != nil {
+			conn.Write([]byte("HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n"))
+
+		} else {
+			response := "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: " + fmt.Sprint(len(file)) + "\r\n\r\n" + string(file)
+			conn.Write([]byte(response))
+		}
+
 	} else {
-		conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+		conn.Write([]byte("HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n"))
 	}
 
 }
