@@ -14,17 +14,28 @@ func main() {
 		os.Exit(1)
 	}
 
-	conn, err := l.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
-	}
+	for {
 
+		conn, err := l.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection: ", err.Error())
+			os.Exit(1)
+		}
+
+		go server(conn)
+
+	}
+}
+
+func server(conn net.Conn) {
 	buffer := make([]byte, 1024)
 	charRead, _ := conn.Read(buffer)
 
 	fields := strings.Fields(string(buffer[:charRead]))
-	fmt.Println(fields[1])
+
+	fmt.Println(string(buffer[:charRead]))
+	fmt.Println()
+	fmt.Println(fields)
 
 	if fields[1] == "/" {
 		conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
@@ -36,8 +47,13 @@ func main() {
 		urlPath := path[secIndex+2:]
 
 		response := "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + fmt.Sprint(len(urlPath)) + "\r\n\r\n" + urlPath
+		conn.Write([]byte(response))
+	} else if strings.Contains(fields[1], "/user-agent") {
+		header := fields[6]
 
-		fmt.Println(response)
+		fmt.Println(header, len(header))
+
+		response := "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + fmt.Sprint(len(header)) + "\r\n\r\n" + header
 		conn.Write([]byte(response))
 	} else {
 		conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
